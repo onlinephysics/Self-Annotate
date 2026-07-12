@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Self Annotate — Settings</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+
+  body {
+    font-family:'Hind Siliguri', Arial, sans-serif;
+    background:#f4f7f6; color:#1e293b;
+    min-height:100vh;
+    transition: background .3s, color .3s;
+  }
+  body.dark { background:#111827; color:#d1d5db; }
+
+  .container { max-width:480px; margin:0 auto; padding:36px 20px; }
+
+  .header { display:flex; align-items:center; gap:14px; margin-bottom:28px; }
+  .header-icon {
+    width:54px; height:54px; border-radius:14px;
+    background:#0d6efd; display:flex; align-items:center;
+    justify-content:center; font-size:28px; flex-shrink:0;
+    box-shadow:0 4px 18px rgba(13,110,253,.35);
+  }
+  .header-text h1 { font-size:21px; font-weight:800; }
+  .header-text p  { font-size:13px; color:#64748b; margin-top:3px; }
+  body.dark .header-text p { color:#94a3b8; }
+
+  .card {
+    background:#fff; border-radius:16px;
+    border:1.5px solid #e2e8f0;
+    box-shadow:0 4px 20px rgba(0,0,0,.07);
+    overflow:hidden; margin-bottom:16px;
+    transition: background .3s, border-color .3s;
+  }
+  body.dark .card { background:#1e293b; border-color:#2d3f55; }
+
+  .card-title {
+    font-size:10px; font-weight:800; letter-spacing:1.5px;
+    text-transform:uppercase; color:#94a3b8;
+    padding:14px 20px 0;
+  }
+
+  .row {
+    display:flex; align-items:center;
+    justify-content:space-between;
+    padding:16px 20px; gap:16px;
+    border-bottom:1px solid #f1f5f9;
+  }
+  .row:last-child { border-bottom:none; }
+  body.dark .row { border-bottom-color:rgba(255,255,255,.05); }
+
+  .row-label { font-size:15px; font-weight:700; }
+  .row-sub   { font-size:12px; color:#94a3b8; margin-top:3px; }
+
+  .toggle-grp {
+    display:flex; background:#f1f5f9; border-radius:10px;
+    padding:3px; gap:2px; flex-shrink:0;
+  }
+  body.dark .toggle-grp { background:#0f172a; }
+
+  .toggle-btn {
+    padding:7px 16px; border:none; border-radius:8px; cursor:pointer;
+    font-family:'Hind Siliguri',Arial,sans-serif;
+    font-size:13px; font-weight:700;
+    background:transparent; color:#64748b;
+    transition:background .15s, color .15s, box-shadow .15s;
+  }
+  .toggle-btn.active {
+    background:#0d6efd; color:#fff;
+    box-shadow:0 2px 8px rgba(13,110,253,.35);
+  }
+  body.dark .toggle-btn { color:#64748b; }
+  body.dark .toggle-btn.active { background:#2563eb; }
+
+  .save-btn {
+    width:100%; padding:15px; border:none; border-radius:13px;
+    background:#0d6efd; color:#fff;
+    font-family:'Hind Siliguri',Arial,sans-serif;
+    font-size:16px; font-weight:800; cursor:pointer;
+    box-shadow:0 4px 18px rgba(13,110,253,.35);
+    transition:background .2s, transform .1s;
+    margin-top:8px;
+  }
+  .save-btn:hover  { background:#0b5ed7; transform:scale(1.01); }
+  .save-btn:active { transform:scale(.98); }
+
+  .saved-msg {
+    text-align:center; font-size:14px; font-weight:700;
+    color:#10b981; margin-top:14px; min-height:22px;
+    opacity:0; transition:opacity .3s;
+  }
+  .saved-msg.show { opacity:1; }
+
+  .footer {
+    margin-top:28px; text-align:center;
+    font-size:12px; color:#94a3b8;
+  }
+  .footer a { color:#0d6efd; text-decoration:none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <div class="header-icon">✏️</div>
+    <div class="header-text">
+      <h1>Self Annotate</h1>
+      <p>Extension Settings — Chrome · v1.1</p>
+    </div>
+  </div>
+
+  <!-- Appearance -->
+  <div class="card">
+    <div class="card-title">Appearance</div>
+    <div class="row">
+      <div>
+        <div class="row-label">থিম / Theme</div>
+        <div class="row-sub">Toolbar ও Whiteboard এর রঙ</div>
+      </div>
+      <div class="toggle-grp">
+        <button class="toggle-btn active" id="themeDevice">⚙️ Auto</button>
+        <button class="toggle-btn"        id="themeLight">☀️ Light</button>
+        <button class="toggle-btn"        id="themeDark">🌙 Dark</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Language -->
+  <div class="card">
+    <div class="card-title">Language</div>
+    <div class="row">
+      <div>
+        <div class="row-label">ভাষা / Language</div>
+        <div class="row-sub">Toolbar tooltips ও messages</div>
+      </div>
+      <div class="toggle-grp">
+        <button class="toggle-btn"        id="langBN">বাং</button>
+        <button class="toggle-btn active" id="langEN">EN</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="save-btn" id="saveBtn">✅ Save Settings</button>
+  <div class="saved-msg" id="savedMsg">✅ Settings saved!</div>
+
+  <div class="footer">
+    ⚙️ Auto = follows your Windows/browser dark mode preference.<br>Settings saved in <strong>localStorage</strong> &amp; <strong>chrome.storage</strong>.
+  </div>
+
+</div>
+
+<script>
+function getDeviceDark() {
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+function setThemeUI(theme) {
+  ['themeDevice','themeLight','themeDark'].forEach(function(id) {
+    document.getElementById(id).classList.remove('active');
+  });
+  document.getElementById(
+    theme === 'dark' ? 'themeDark' : theme === 'light' ? 'themeLight' : 'themeDevice'
+  ).classList.add('active');
+  // Preview on options page itself
+  var dark = (theme === 'dark') || (theme === 'device' && getDeviceDark());
+  document.body.classList.toggle('dark', dark);
+}
+
+// ── Load saved settings ──
+chrome.storage.local.get(['AN_theme', 'AN_lang'], function(result) {
+  var theme = result.AN_theme || localStorage.getItem('AN_theme') || 'device';
+  var lang  = result.AN_lang  || localStorage.getItem('AN_lang')  || 'en';
+  setThemeUI(theme);
+  if (lang === 'bn') {
+    document.getElementById('langBN').classList.add('active');
+    document.getElementById('langEN').classList.remove('active');
+  } else {
+    document.getElementById('langEN').classList.add('active');
+    document.getElementById('langBN').classList.remove('active');
+  }
+});
+
+// ── Theme toggle ──
+document.getElementById('themeDevice').addEventListener('click', function() { setThemeUI('device'); });
+document.getElementById('themeLight').addEventListener('click',  function() { setThemeUI('light');  });
+document.getElementById('themeDark').addEventListener('click',   function() { setThemeUI('dark');   });
+
+// ── Language toggle ──
+document.getElementById('langBN').addEventListener('click', function() {
+  document.getElementById('langBN').classList.add('active');
+  document.getElementById('langEN').classList.remove('active');
+});
+document.getElementById('langEN').addEventListener('click', function() {
+  document.getElementById('langEN').classList.add('active');
+  document.getElementById('langBN').classList.remove('active');
+});
+
+// ── Save ──
+document.getElementById('saveBtn').addEventListener('click', function() {
+  var theme = document.getElementById('themeDark').classList.contains('active')   ? 'dark'
+            : document.getElementById('themeLight').classList.contains('active')  ? 'light'
+            : 'device';
+  var lang  = document.getElementById('langEN').classList.contains('active') ? 'en' : 'bn';
+
+  chrome.storage.local.set({ AN_theme: theme, AN_lang: lang }, function() {
+    localStorage.setItem('AN_theme', theme);
+    localStorage.setItem('AN_lang',  lang);
+    var msg = document.getElementById('savedMsg');
+    msg.classList.add('show');
+    setTimeout(function() { msg.classList.remove('show'); }, 2500);
+  });
+});
+</script>
+</body>
+</html>

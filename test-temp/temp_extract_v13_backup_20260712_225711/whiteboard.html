@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Self Annotate — Whiteboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Hind Siliguri',Arial,sans-serif;background:#1e293b;}
+body.AN_dark{background:#0f172a;}
+
+#wbRoot{display:flex;flex-direction:column;width:100%;height:100%;}
+
+#wbMain{display:flex;flex:1;min-height:0;overflow:hidden;}
+#wbBody{flex:1;position:relative;min-height:0;overflow:hidden;background:#9ca3af;}
+#wbCanvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none;display:block;transform-origin:0 0;}
+
+/* Bottom NavBar: title on right, toolbar scrolls on left */
+#wbBar{
+  display:flex;align-items:center;gap:4px;padding:5px 8px 5px 10px;flex-shrink:0;
+  background:rgba(255,255,255,.97);border-top:1px solid #e2e8f0;
+  overflow:visible;position:relative;user-select:none;min-height:44px;
+}
+body.AN_dark #wbBar{background:rgba(15,23,42,.97);border-top:1px solid rgba(255,255,255,.08);}
+#wbBar .wbScroll{display:flex;align-items:center;gap:4px;overflow-x:auto;flex:1;}
+#wbBarTitle{
+  flex-shrink:0;display:flex;align-items:center;gap:6px;padding:0 6px 0 10px;
+  color:#64748b;font-size:11px;font-weight:700;white-space:nowrap;
+  border-left:1px solid #e2e8f0;margin-left:4px;height:24px;
+}
+body.AN_dark #wbBarTitle{color:#475569;border-left-color:rgba(255,255,255,.1);}
+#wbBarTitle span{font-size:13px;}
+body.AN_dark #wbBarTitle span{opacity:.85;}
+
+.wbSep{width:1px;height:22px;background:#e2e8f0;flex-shrink:0;}
+body.AN_dark .wbSep{background:rgba(255,255,255,.1);}
+.wbt{
+  background:none;border:2px solid transparent;border-radius:8px;
+  width:32px;height:32px;font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .12s,border-color .12s,transform .1s;flex-shrink:0;
+}
+.wbt:hover{background:rgba(13,110,253,.08);transform:scale(1.08);}
+body.AN_dark .wbt:hover{background:rgba(255,255,255,.08);}
+.wbt.wbActive{background:rgba(13,110,253,.12);border-color:#0d6efd;}
+.wbt[data-tool="magic"].wbActive{border-color:#f59e0b;background:rgba(245,158,11,.12);}
+.wbColors,.wbBG{display:flex;gap:4px;align-items:center;flex-shrink:0;}
+.wbClr,.bgClr{width:19px;height:19px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .13s;flex-shrink:0;}
+.wbClr:hover,.bgClr:hover{transform:scale(1.22);}
+.wbClr.wbClrActive{border-color:#fff;box-shadow:0 0 0 2.5px #0d6efd;transform:scale(1.15);}
+.bgClr.bgActive{border-color:#fff;box-shadow:0 0 0 2.5px #6366f1;transform:scale(1.15);}
+.bgLbl{font-size:11px;font-weight:700;color:#94a3b8;white-space:nowrap;}
+body.AN_dark .bgLbl{color:#64748b;}
+#wbSlider{width:64px;height:4px;flex-shrink:0;-webkit-appearance:none;appearance:none;background:#cbd5e1;border-radius:2px;outline:none;cursor:pointer;}
+body.AN_dark #wbSlider{background:rgba(255,255,255,.15);}
+#wbSlider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#0d6efd;cursor:pointer;}
+.wbAct{background:none;border:none;font-size:16px;cursor:pointer;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:background .12s,transform .1s;flex-shrink:0;}
+.wbAct:hover{background:rgba(13,110,253,.08);transform:scale(1.1);}
+body.AN_dark .wbAct:hover{background:rgba(255,255,255,.09);}
+
+/* Flyout — opens above the bar */
+.flyout{
+  position:absolute;z-index:9200;
+  background:rgba(255,255,255,.98);border:1.5px solid #cbd5e1;
+  border-radius:12px;padding:5px 6px;
+  box-shadow:0 8px 28px rgba(0,0,0,.22);
+  display:none;gap:3px;flex-wrap:wrap;max-width:200px;
+  backdrop-filter:blur(12px);
+  animation:flyPop .14s cubic-bezier(.34,1.56,.64,1);
+}
+.flyout.flyOpen{display:flex;}
+body.AN_dark .flyout{background:rgba(22,32,50,.98);border-color:#34445a;}
+body.AN_dark .flyout .wbt{color:#d4dce8;}
+
+@keyframes flyPop{from{opacity:0}to{opacity:1}}
+
+/* Zoom controls */
+.wbZoomBlock{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.wbZoomBtn{
+  width:26px;height:26px;border:none;border-radius:6px;
+  background:rgba(13,110,253,.1);color:#1e293b;font-size:14px;
+  font-weight:700;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;transition:background .12s;flex-shrink:0;
+}
+body.AN_dark .wbZoomBtn{color:#d4dce8;background:rgba(96,165,250,.15);}
+.wbZoomBtn:hover{background:rgba(13,110,253,.2);}
+.wbZoomVal{font-size:11px;font-weight:700;color:#475569;min-width:34px;text-align:center;}
+body.AN_dark .wbZoomVal{color:#94a3b8;}
+.wbZoomSlider{width:58px;height:4px;-webkit-appearance:none;appearance:none;background:#cbd5e1;border-radius:2px;outline:none;cursor:pointer;}
+body.AN_dark .wbZoomSlider{background:rgba(255,255,255,.15);}
+.wbZoomSlider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#0d6efd;cursor:pointer;}
+
+/* Confirm modal */
+#AN_modal{display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);animation:fadeIn .15s ease;}
+#AN_modal.show{display:flex;}
+#AN_modalBox{background:#1e293b;color:#e2e8f0;border-radius:18px;padding:28px 28px 22px;box-shadow:0 24px 64px rgba(0,0,0,.6);min-width:260px;max-width:340px;width:90vw;display:flex;flex-direction:column;align-items:center;gap:12px;animation:flyPop .18s cubic-bezier(.34,1.56,.64,1);border:1px solid rgba(255,255,255,.08);}
+#AN_modalIcon{font-size:36px;line-height:1;}
+#AN_modalMsg{font-size:16px;font-weight:600;text-align:center;line-height:1.5;color:#e2e8f0;}
+#AN_modalBtns{display:flex;gap:10px;margin-top:6px;width:100%;}
+#AN_modalOk,#AN_modalCancel{flex:1;padding:10px 0;border:none;border-radius:10px;font-family:'Hind Siliguri',Arial,sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:transform .1s,filter .12s;}
+#AN_modalOk{background:#ef4444;color:#fff;}
+#AN_modalCancel{background:rgba(255,255,255,.1);color:#e2e8f0;border:1px solid rgba(255,255,255,.15);}
+#AN_modalOk:hover{filter:brightness(1.15);transform:scale(1.03);}
+#AN_modalCancel:hover{filter:brightness(1.2);transform:scale(1.03);}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+</style>
+</head>
+<body>
+<div id="AN_modal">
+  <div id="AN_modalBox">
+    <div id="AN_modalIcon">🗑️</div>
+    <div id="AN_modalMsg"></div>
+    <div id="AN_modalBtns">
+      <button id="AN_modalOk">হ্যাঁ, মুছো</button>
+      <button id="AN_modalCancel">বাতিল</button>
+    </div>
+  </div>
+</div>
+
+<div id="wbRoot">
+  <div id="wbMain">
+    <div id="wbBody">
+      <canvas id="wbCanvas"></canvas>
+    </div>
+  </div>
+  <div id="wbBar">
+    <div class="wbScroll" id="wbScroll"></div>
+    <div id="wbBarTitle"><span>🖊️</span> Self Study Whiteboard</div>
+  </div>
+</div>
+<script src="whiteboard.js"></script>
+</body>
+</html>
