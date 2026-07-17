@@ -1,8 +1,8 @@
 # Self-Annotate
 
-**Annotation Tool + Whiteboard** for any webpage. Draw, highlight, add text, and manage multi-page whiteboards — all inside the browser. Works on `http://`, `https://`, and `file://` pages.
+**Annotation Tool + Whiteboard** for any webpage. Draw, highlight, add text, manage multi-page whiteboards, and more — all inside the browser. Works on `http://`, `https://`, and `file://` pages.
 
-> Chrome MV3 extension · Firefox build also available
+> Chrome MV3 extension · Firefox build available (v109+)
 
 ---
 
@@ -19,34 +19,35 @@
 
 ## Features
 
-### Annotation Overlay
+### Core Tools
 | Tool | Description |
 |------|-------------|
 | ✏️ Pen | Smooth freehand drawing |
-| ✨ Magic Pen | Draws and fades after 2 seconds |
+| ✨ Magic Pen | Draws with fade animation (2s) |
 | 🖊️ Highlighter | Semi-transparent marker |
-| ➡️ Arrow / ⬜ Rectangle / ⭕ Circle | Shape tools |
+| ➡️ Arrow / Shapes | 8 shapes: arrow, rect, circle, triangle, pentagon, hexagon, roundrect, diamond, star, right triangle |
 | T Text | Type onto the page |
-| 🧹 Eraser | Remove specific strokes |
-| ↩️ Undo | Last stroke (also Ctrl+Z) |
-| 🗑️ Clear | Clear all overlay annotations |
-| 👁️ Hide/Show | Toggle annotations visibility |
-| 🤚 Scroll Mode | Disable drawing, scroll freely |
-| ↔️ Rotate Bar | Switch toolbar horizontal/vertical |
-| 🎨 Colors | 7 swatches + stroke width slider |
-| 🖥️ Whiteboard | Open floating whiteboard |
+| 👆 Select | Select, move, delete individual strokes |
+| 🧹 Eraser | **Partial eraser** — splits strokes at eraser point (not whole stroke removal) with **size preview circle** |
+| 🤚 Pan | Drag to pan the canvas |
+| ↩️ Undo / ↪️ Redo | **Multi-level undo/redo stack** (up to 50 steps) with Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y |
+| 🗑️ Clear | Clear all annotations |
 
+### Annotation Overlay
 - Draggable toolbar with position memory across pages
 - **Custom layout** — rearrange tools, create flyout groups via the popup editor
+- **Custom color picker** — choose any color via native `<input type="color">` alongside 7 presets
+- **Built-in presets**: Default, Minimal, Drawing, Compact
+- Hide/show annotations, scroll mode, rotate toolbar
 
 ### Whiteboard (Floating Window)
-- Full set of drawing tools (pen, marker, shapes, text, eraser)
+- Full set of drawing tools (pen, marker, shapes, text, eraser with preview)
 - **Multi-page** — add, navigate, delete pages with sidebar thumbnails
-- **Export** — current page as PNG, multiple pages as PDF (real PDF, canvas-sized)
+- **Export** — current page as PNG, multiple pages as PDF (real PDF, canvas-sized JPEG)
 - Resizable, draggable, minimizable, fullscreen
-- Background color picker, zoom
-- Save/load `.sswb` files
-- **Standalone mode** — open a dedicated whiteboard tab via the popup
+- Background color picker, zoom controls
+- Save/load `.sswb` files (proprietary whiteboard format)
+- **Standalone tab** — open a dedicated whiteboard tab via the popup
 
 ### Autosave (experimental)
 - Annotations and whiteboard data saved per URL in Chrome storage
@@ -55,26 +56,30 @@
 - Saved sites list in the popup (open or delete entries)
 - Toggle on/off from the popup
 
-### Toolbar Layout Editor
-- Built-in presets: Default, Minimal, Drawing, Compact
-- Custom groups: drag-and-drop tool arrangement
-- Inline / flyout group modes
-- Works for both annotation toolbar and whiteboard toolbar
+### Keyboard Shortcuts
+| Shortcut | Action |
+|----------|--------|
+| Ctrl+Z | Undo |
+| Ctrl+Shift+Z / Ctrl+Y | Redo |
+| Delete / Backspace | Delete selected strokes |
+| Escape | Deselect all |
+| Ctrl+S (whiteboard) | Save .sswb file |
+| Ctrl+O (whiteboard) | Load .sswb file |
 
 ---
 
 ## Installation
 
 ### Chrome
-1. Download `self-annotate-v1.3-chrome.zip` from the [releases page](https://github.com/anomalyco/self-annotate/releases)
+1. Download `self-annotate-v1.4.4-chrome.zip` from the `chrome-packages/` folder
 2. Extract to a permanent folder (e.g. `C:\Extensions\self-annotate\`)
 3. Open `chrome://extensions`
 4. Enable **Developer mode** (top-right toggle)
 5. Click **Load unpacked** → select the extracted folder
-6. Pin the extension (🧩 → 📌) and click the icon to turn it ON
+6. Pin the extension and click the icon to turn it ON
 
 ### Firefox
-1. Download `self-annotate-v1.3-firefox.zip`
+1. Download `self-annotate-v1.4.4-firefox.zip`
 2. Open `about:debugging#/runtime/this-firefox`
 3. Click **Load Temporary Add-on** → select the zip
 4. For permanent install, submit to [addons.mozilla.org](https://addons.mozilla.org)
@@ -88,7 +93,7 @@ For `file://` pages, enable **Allow access to file URLs**:
 
 ## Quick Start
 1. Click the extension icon → toggle **ON** (green badge)
-2. Open any webpage → click the ✏️ FAB button (bottom-right)
+2. Open any webpage → click the ✏️ **FAB button** (bottom-right)
 3. Annotation toolbar appears — start drawing
 4. 🖥️ opens the whiteboard; ⚙️ in popup shows all settings
 5. Enable **Autosave** in the popup to persist annotations per URL
@@ -97,10 +102,21 @@ For `file://` pages, enable **Allow access to file URLs**:
 
 ## Packages
 
-| Package | Path |
-|---------|------|
-| Chrome | `chrome-packages/self-annotate-v1.3-chrome.zip` |
-| Firefox | `firefox-packages/self-annotate-v1.3-firefox.zip` |
+| Package | Version | Path |
+|---------|---------|------|
+| Chrome | v1.4.4 | `chrome-packages/self-annotate-v1.4.4-chrome.zip` |
+| Firefox | v1.4.4 | `firefox-packages/self-annotate-v1.4.4-firefox.zip` |
+
+### Build History
+| Version | Highlights |
+|---------|------------|
+| v1.4.4 | Multi-level undo/redo, custom color picker, bug fixes (double Ctrl+Z, missing translations) |
+| v1.4.3 | Undo/Redo stack, custom color picker, redo buttons |
+| v1.4.2 | Partial eraser (split strokes), eraser preview circle |
+| v1.4.1 | Critical bug fix (viewport code), version bump |
+| v1.4.0 | Selection, new shapes, image paste, pan/zoom, keyboard shortcuts |
+| v1.3 | Autosave, multi-page whiteboard, PNG/PDF export |
+| v1.2 | Group toolbar system, flyout groups, custom layout |
 
 ---
 
@@ -109,7 +125,7 @@ For `file://` pages, enable **Allow access to file URLs**:
 | File | Description |
 |------|-------------|
 | `background.js` | Service worker (Chrome) / Background page (Firefox) — message routing, injection, autosave handlers |
-| `content.js` | Content script — annotation toolbar, whiteboard, autosave hooks |
+| `content.js` | Content script (~2700 lines) — annotation toolbar, whiteboard, drawing engine, eraser, undo/redo |
 | `popup.html` / `popup.js` | Popup — ON/OFF, theme/lang, autosave controls, toolbar layout editor |
 | `options.html` | Options page — theme & language settings |
 | `whiteboard.html` / `whiteboard.js` | Standalone whiteboard — multi-page, export, PDF generator |

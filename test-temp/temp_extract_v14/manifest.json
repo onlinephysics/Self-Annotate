@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "Self Annotate",
+  "version": "1.4.4",
+  "description": "Self Annotate — Annotation Tool & Whiteboard for any webpage or local HTML file.",
+  "icons": {
+    "48":  "icons/icon48.png",
+    "96":  "icons/icon96.png"
+  },
+  "action": {
+    "default_icon": {
+      "48": "icons/icon48.png",
+      "96": "icons/icon96.png"
+    },
+    "default_title": "Self Annotate",
+    "default_popup": "popup.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "file://*/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "self-annotate@selfstudy.xyz",
+      "strict_min_version": "109.0"
+    }
+  },
+  "web_accessible_resources": [{
+    "resources": ["whiteboard.html"],
+    "matches": ["<all_urls>"]
+  }]
+}

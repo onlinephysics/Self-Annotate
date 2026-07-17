@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Self Annotate — Whiteboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Hind Siliguri',Arial,sans-serif;background:#1e293b;}
+body.AN_dark{background:#0f172a;}
+
+#wbRoot{display:flex;flex-direction:column;width:100%;height:100%;}
+
+#wbMain{display:flex;flex:1;min-height:0;overflow:hidden;}
+#wbBody{flex:1;position:relative;min-height:0;overflow:hidden;background:#9ca3af;}
+#wbCanvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none;display:block;transform-origin:0 0;}
+
+/* Page sidebar */
+#wbPgSide{
+  width:44px;flex-shrink:0;background:rgba(15,23,42,.88);
+  border-right:1px solid rgba(255,255,255,.07);
+  display:flex;align-items:center;justify-content:center;
+}
+#wbPgSide.wbPgHidden{display:none;}
+#wbPgSideInner{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;}
+.wbPgSBtn{
+  width:32px;height:32px;border:none;border-radius:7px;
+  background:none;color:#94a3b8;font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .12s,color .12s;flex-shrink:0;
+}
+.wbPgSBtn:hover{background:rgba(255,255,255,.1);color:#e2e8f0;}
+.wbPgHSep{width:24px;height:1px;background:rgba(255,255,255,.07);margin:2px 0;}
+#wbPgInfo{display:flex;flex-direction:column;align-items:center;}
+#wbPgNum{font-size:13px;font-weight:800;color:#e2e8f0;line-height:1;}
+#wbPgOf{font-size:9px;color:#475569;}
+.wbPgDelBtn{color:#ef4444!important;}
+.wbPgDelBtn:hover{background:rgba(239,68,68,.15)!important;}
+
+#wbPgSideTab{
+  width:14px;flex-shrink:0;background:rgba(15,23,42,.7);
+  display:none;align-items:center;justify-content:center;
+  cursor:pointer;color:#64748b;font-size:12px;
+  border-right:1px solid rgba(255,255,255,.05);
+  transition:background .12s,color .12s;
+}
+#wbPgSideTab.wbSideHidden{display:flex;}
+#wbPgSideTab:hover{background:rgba(255,255,255,.1);color:#e2e8f0;}
+
+/* Bottom NavBar */
+#wbBar{
+  display:flex;align-items:center;gap:4px;padding:5px 8px 5px 10px;flex-shrink:0;
+  background:rgba(255,255,255,.97);border-top:1px solid #e2e8f0;
+  overflow:visible;position:relative;user-select:none;min-height:44px;
+}
+body.AN_dark #wbBar{background:rgba(15,23,42,.97);border-top:1px solid rgba(255,255,255,.08);}
+#wbBar .wbScroll{display:flex;align-items:center;gap:4px;overflow-x:auto;flex:1;}
+#wbBarTitle{
+  flex-shrink:0;display:flex;align-items:center;gap:6px;padding:0 6px 0 10px;
+  color:#64748b;font-size:11px;font-weight:700;white-space:nowrap;
+  border-left:1px solid #e2e8f0;margin-left:4px;height:24px;
+}
+body.AN_dark #wbBarTitle{color:#475569;border-left-color:rgba(255,255,255,.1);}
+#wbBarTitle span{font-size:13px;}
+body.AN_dark #wbBarTitle span{opacity:.85;}
+
+.wbSep{width:1px;height:22px;background:#e2e8f0;flex-shrink:0;}
+body.AN_dark .wbSep{background:rgba(255,255,255,.1);}
+.wbt{
+  background:none;border:2px solid transparent;border-radius:8px;
+  width:32px;height:32px;font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .12s,border-color .12s,transform .1s;flex-shrink:0;
+}
+.wbt:hover{background:rgba(13,110,253,.08);transform:scale(1.08);}
+body.AN_dark .wbt:hover{background:rgba(255,255,255,.08);}
+.wbt.wbActive{background:rgba(13,110,253,.12);border-color:#0d6efd;}
+.wbt[data-tool="magic"].wbActive{border-color:#f59e0b;background:rgba(245,158,11,.12);}
+.wbColors,.wbBG{display:flex;gap:4px;align-items:center;flex-shrink:0;}
+.wbClr,.bgClr{width:19px;height:19px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .13s;flex-shrink:0;}
+.wbClr:hover,.bgClr:hover{transform:scale(1.22);}
+.wbClr.wbClrActive{border-color:#fff;box-shadow:0 0 0 2.5px #0d6efd;transform:scale(1.15);}
+.bgClr.bgActive{border-color:#fff;box-shadow:0 0 0 2.5px #6366f1;transform:scale(1.15);}
+.bgLbl{font-size:11px;font-weight:700;color:#94a3b8;white-space:nowrap;}
+body.AN_dark .bgLbl{color:#64748b;}
+#wbSlider{width:64px;height:4px;flex-shrink:0;-webkit-appearance:none;appearance:none;background:#cbd5e1;border-radius:2px;outline:none;cursor:pointer;}
+body.AN_dark #wbSlider{background:rgba(255,255,255,.15);}
+#wbSlider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#0d6efd;cursor:pointer;}
+.wbAct{background:none;border:none;font-size:16px;cursor:pointer;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:background .12s,transform .1s;flex-shrink:0;}
+.wbAct:hover{background:rgba(13,110,253,.08);transform:scale(1.1);}
+body.AN_dark .wbAct:hover{background:rgba(255,255,255,.09);}
+
+/* Flyout */
+.flyout{
+  position:absolute;z-index:9200;
+  background:rgba(255,255,255,.98);border:1.5px solid #cbd5e1;
+  border-radius:12px;padding:5px 6px;
+  box-shadow:0 8px 28px rgba(0,0,0,.22);
+  display:none;gap:3px;flex-wrap:wrap;max-width:200px;
+  backdrop-filter:blur(12px);
+  animation:flyPop .14s cubic-bezier(.34,1.56,.64,1);
+}
+.flyout.flyOpen{display:flex;}
+body.AN_dark .flyout{background:rgba(22,32,50,.98);border-color:#34445a;}
+body.AN_dark .flyout .wbt{color:#d4dce8;}
+@keyframes flyPop{from{opacity:0}to{opacity:1}}
+
+/* Zoom controls */
+.wbZoomBlock{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.wbZoomBtn{
+  width:26px;height:26px;border:none;border-radius:6px;
+  background:rgba(13,110,253,.1);color:#1e293b;font-size:14px;
+  font-weight:700;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;transition:background .12s;flex-shrink:0;
+}
+body.AN_dark .wbZoomBtn{color:#d4dce8;background:rgba(96,165,250,.15);}
+.wbZoomBtn:hover{background:rgba(13,110,253,.2);}
+.wbZoomVal{font-size:11px;font-weight:700;color:#475569;min-width:34px;text-align:center;}
+body.AN_dark .wbZoomVal{color:#94a3b8;}
+.wbZoomSlider{width:58px;height:4px;-webkit-appearance:none;appearance:none;background:#cbd5e1;border-radius:2px;outline:none;cursor:pointer;}
+body.AN_dark .wbZoomSlider{background:rgba(255,255,255,.15);}
+.wbZoomSlider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#0d6efd;cursor:pointer;}
+
+/* Thickness controls */
+.wbThickWrap{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.wbThickBtn{
+  width:28px;height:28px;border:none;border-radius:7px;
+  background:rgba(13,110,253,.1);color:#1e293b;font-size:14px;
+  font-weight:700;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;transition:background .12s,transform .1s;flex-shrink:0;
+}
+body.AN_dark .wbThickBtn{color:#d4dce8!important;background:rgba(96,165,250,.15);}
+.wbThickBtn:hover{background:rgba(13,110,253,.2);transform:scale(1.08);}
+body.AN_dark .wbThickBtn:hover{background:rgba(96,165,250,.3);}
+.wbThickVal{
+  min-width:36px;text-align:center;font-size:13px;font-weight:700;
+  color:#1e293b;cursor:pointer;user-select:none;padding:0 6px;
+  border-radius:6px;background:rgba(13,110,253,.08);
+  transition:background .12s;
+}
+body.AN_dark .wbThickVal{color:#d4dce8!important;background:rgba(96,165,250,.15);}
+.wbThickVal:hover{background:rgba(13,110,253,.15);}
+body.AN_dark .wbThickVal:hover{background:rgba(96,165,250,.25);}
+
+/* Numpad modal */
+#wbNumpadModal{
+  display:none;position:fixed;inset:0;z-index:99999;
+  align-items:center;justify-content:center;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(4px);
+}
+#wbNumpadModal .wbNumpadKey:hover{
+  background:rgba(59,130,246,.25) !important;transform:scale(1.05);
+}
+body.AN_dark #wbNumpadModal .wbNumpadKey{
+  background:rgba(255,255,255,.04);color:#e2e8f0;
+}
+body.AN_dark #wbNumpadModal .wbNumpadKey[data-key="⌫"],
+body.AN_dark #wbNumpadModal .wbNumpadKey[data-key="✓"]{
+  background:rgba(59,130,246,.15);color:#3b82f6;
+}
+body.AN_dark #wbNumpadModal .wbNumpadKey:hover{
+  background:rgba(59,130,246,.25) !important;
+}
+#wbNumpadInput:focus{outline:none;border-color:#3b82f6 !important;box-shadow:0 0 0 3px rgba(59,130,246,.2);}
+
+/* Confirm modal */
+#AN_modal{display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);}
+#AN_modal.show{display:flex;}
+#AN_modalBox{background:#1e293b;color:#e2e8f0;border-radius:18px;padding:28px 28px 22px;box-shadow:0 24px 64px rgba(0,0,0,.6);min-width:260px;max-width:340px;width:90vw;display:flex;flex-direction:column;align-items:center;gap:12px;border:1px solid rgba(255,255,255,.08);}
+#AN_modalIcon{font-size:36px;line-height:1;}
+#AN_modalMsg{font-size:16px;font-weight:600;text-align:center;line-height:1.5;color:#e2e8f0;}
+#AN_modalBtns{display:flex;gap:10px;margin-top:6px;width:100%;}
+#AN_modalOk,#AN_modalCancel{flex:1;padding:10px 0;border:none;border-radius:10px;font-family:'Hind Siliguri',Arial,sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:transform .1s,filter .12s;}
+#AN_modalOk{background:#ef4444;color:#fff;}
+#AN_modalCancel{background:rgba(255,255,255,.1);color:#e2e8f0;border:1px solid rgba(255,255,255,.15);}
+#AN_modalOk:hover{filter:brightness(1.15);transform:scale(1.03);}
+#AN_modalCancel:hover{filter:brightness(1.2);transform:scale(1.03);}
+
+/* Page thumbnail modal */
+#wbPgModal{
+  display:none;position:fixed;inset:0;z-index:99990;
+  align-items:center;justify-content:center;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(5px);
+}
+#wbPgModal.wbShow{display:flex;}
+#wbPgModalBox{
+  background:#1e293b;border-radius:16px;
+  width:min(680px,92vw);max-height:80vh;display:flex;flex-direction:column;
+  box-shadow:0 24px 64px rgba(0,0,0,.6);
+  border:1px solid rgba(255,255,255,.1);overflow:hidden;
+}
+#wbPgModalHead{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px 12px;border-bottom:1px solid rgba(255,255,255,.08);
+  font-size:15px;font-weight:800;color:#e2e8f0;flex-shrink:0;
+}
+#wbPgModalClose{
+  background:rgba(255,255,255,.08);border:none;color:#94a3b8;
+  width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;transition:background .12s;
+}
+#wbPgModalClose:hover{background:rgba(239,68,68,.2);color:#ef4444;}
+#wbPgThumbs{display:flex;flex-wrap:wrap;gap:14px;padding:16px;overflow-y:auto;}
+.wbPgThumb{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:transform .13s;}
+.wbPgThumb:hover{transform:scale(1.04);}
+.wbPgThumb canvas{width:140px;height:100px;border-radius:8px;border:2.5px solid transparent;box-shadow:0 4px 14px rgba(0,0,0,.35);}
+.wbPgThumb.wbPgCur canvas{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.35);}
+.wbPgThumb span{font-size:12px;font-weight:700;color:#94a3b8;}
+.wbPgThumb.wbPgCur span{color:#3b82f6;}
+
+/* Export modal */
+#wbExpModal{
+  display:none;position:fixed;inset:0;z-index:99990;
+  align-items:center;justify-content:center;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(5px);
+}
+#wbExpModal.wbShow{display:flex;}
+#wbExpBox{
+  background:#1e293b;border-radius:16px;
+  width:min(340px,92vw);display:flex;flex-direction:column;
+  box-shadow:0 24px 64px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);
+  overflow:hidden;
+}
+#wbExpHead{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,.07);
+  font-size:14px;font-weight:800;color:#e2e8f0;
+}
+#wbExpClose{
+  background:rgba(255,255,255,.08);border:none;color:#94a3b8;
+  width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;transition:background .12s;
+}
+#wbExpClose:hover{background:rgba(239,68,68,.2);color:#ef4444;}
+.wbExpBtns{display:flex;flex-direction:column;gap:8px;padding:12px 14px;}
+.wbExpBtn{
+  display:flex;align-items:center;gap:12px;padding:10px 14px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;cursor:pointer;transition:background .15s,border-color .15s,transform .1s;
+  text-align:left;width:100%;
+}
+.wbExpBtn:hover{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.4);transform:scale(1.01);}
+.wbExpIcon{font-size:26px;flex-shrink:0;}
+.wbExpTitle{font-size:14px;font-weight:800;color:#e2e8f0;display:block;}
+.wbExpSub{font-size:11px;color:#64748b;margin-top:2px;display:block;}
+#wbExpSelArea{padding:12px 14px 8px;border-top:1px solid rgba(255,255,255,.07);display:none;}
+#wbExpSelLabel{font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px;display:block;}
+#wbExpSelGrid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;}
+.wbExpSelTh{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.wbExpSelTh canvas{width:70px;height:50px;border-radius:6px;border:2.5px solid rgba(255,255,255,.15);transition:border-color .13s;}
+.wbExpSelTh.wbSelChk canvas{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.35);}
+.wbExpSelTh span{font-size:10px;font-weight:700;color:#64748b;}
+.wbExpSelTh.wbSelChk span{color:#3b82f6;}
+#wbExpSelActs{display:flex;gap:7px;}
+#wbExpSelActs button{
+  flex:1;padding:8px 0;border:none;border-radius:8px;
+  font-family:'Hind Siliguri',Arial,sans-serif;font-size:12px;font-weight:700;cursor:pointer;
+  transition:filter .12s,transform .1s;
+}
+#wbExpSelA,#wbExpSelN{background:rgba(255,255,255,.08);color:#e2e8f0;}
+#wbExpSelGo{background:#3b82f6;color:#fff;}
+#wbExpSelGo:hover{filter:brightness(1.15);}
+#wbExpProg{padding:12px 16px 14px;border-top:1px solid rgba(255,255,255,.07);display:none;}
+#wbExpProgBar{height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-bottom:8px;}
+#wbExpProgFill{height:100%;background:#3b82f6;border-radius:3px;width:0%;transition:width .2s;}
+#wbExpProgTxt{font-size:12px;color:#94a3b8;text-align:center;}
+.AN_dragGhost{position:absolute;inset:0;z-index:9999;border:3px dashed #3b82f6;background:rgba(59,130,246,.08);pointer-events:none;display:none;}
+.AN_dragGhost.AN_on{display:block;}
+
+/* ── Text popup ── */
+#AN_wbTextpop{position:fixed;z-index:9200;background:rgba(255,255,255,.98);border:1.5px solid #cbd5e1;border-radius:14px;padding:14px 16px;box-shadow:0 8px 32px rgba(0,0,0,.2);display:none;flex-direction:column;min-width:240px;font-family:'Hind Siliguri',Arial,sans-serif;}
+body.AN_dark #AN_wbTextpop{background:rgba(22,32,50,.98);border-color:#34445a;}
+#AN_wbTextpop.AN_show{display:flex;}
+#AN_wbTinput{font-family:'Hind Siliguri',Arial,sans-serif;font-size:15px;padding:8px 12px;border:1.5px solid #cbd5e1;border-radius:8px;background:transparent;color:inherit;outline:none;width:100%;}
+body.AN_dark #AN_wbTinput{border-color:#34445a;color:#d4dce8;}
+#AN_wbTinput:focus{border-color:#0d6efd;}
+#AN_wbTok,#AN_wbTcancel{flex:1;padding:7px;border:none;border-radius:8px;font-family:'Hind Siliguri',Arial,sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+#AN_wbTok{background:#0d6efd;color:#fff;}
+#AN_wbTcancel{background:#f0f4ff;color:#1e293b;border:1px solid #cbd5e1;}
+body.AN_dark #AN_wbTcancel{background:rgba(255,255,255,.08);color:#d4dce8;border-color:#34445a;}
+
+/* ── Selection action buttons ── */
+.AN_selActions{position:absolute;z-index:9999;display:none;gap:4px;}
+.AN_selActions.AN_show{display:flex;}
+.AN_selActions button{pointer-events:auto;width:28px;height:28px;border:none;border-radius:7px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.AN_selDel{background:#ef4444;color:#fff;}
+.AN_selEdit{background:#3b82f6;color:#fff;}
+</style>
+</head>
+<body>
+<div id="AN_modal">
+  <div id="AN_modalBox">
+    <div id="AN_modalIcon">🗑️</div>
+    <div id="AN_modalMsg"></div>
+    <div id="AN_modalBtns">
+      <button id="AN_modalOk">হ্যাঁ, মুছো</button>
+      <button id="AN_modalCancel">বাতিল</button>
+    </div>
+  </div>
+</div>
+
+<!-- Page thumbnail modal -->
+<div id="wbPgModal">
+  <div id="wbPgModalBox">
+    <div id="wbPgModalHead"><span>📄 পেজ বেছে নাও</span><button id="wbPgModalClose">✕</button></div>
+    <div id="wbPgThumbs"></div>
+  </div>
+</div>
+
+<!-- Export modal -->
+<div id="wbExpModal">
+  <div id="wbExpBox">
+    <div id="wbExpHead"><span>⬇️ Export</span><button id="wbExpClose">✕</button></div>
+    <div class="wbExpBtns">
+      <button class="wbExpBtn" id="wbExpPng"><span class="wbExpIcon">🖼️</span><span><span class="wbExpTitle">এই পেজ — PNG</span><span class="wbExpSub">Current page as image</span></span></button>
+      <button class="wbExpBtn" id="wbExpAll"><span class="wbExpIcon">📄</span><span><span class="wbExpTitle">সব পেজ — PDF</span><span class="wbExpSub">All pages in one PDF</span></span></button>
+      <button class="wbExpBtn" id="wbExpSel"><span class="wbExpIcon">🗂️</span><span><span class="wbExpTitle">বেছে নেওয়া পেজ — PDF</span><span class="wbExpSub">Select which pages to include</span></span></button>
+    </div>
+    <div id="wbExpSelArea">
+      <span id="wbExpSelLabel">পেজ বেছে নাও:</span>
+      <div id="wbExpSelGrid"></div>
+      <div id="wbExpSelActs">
+        <button id="wbExpSelA">সব বেছে নাও</button>
+        <button id="wbExpSelN">কোনোটি না</button>
+        <button id="wbExpSelGo">✅ PDF বানাও</button>
+      </div>
+    </div>
+    <div id="wbExpProg">
+      <div id="wbExpProgBar"><div id="wbExpProgFill"></div></div>
+      <div id="wbExpProgTxt">তৈরি হচ্ছে…</div>
+    </div>
+  </div>
+</div>
+
+<div id="wbRoot">
+  <div id="wbMain">
+    <div id="wbPgSide">
+      <div id="wbPgSideInner">
+        <button class="wbPgSBtn" id="wbPgNew" title="নতুন পেজ">＋</button>
+        <div class="wbPgHSep"></div>
+        <button class="wbPgSBtn" id="wbPgPrev" title="আগের পেজ">↑</button>
+        <div id="wbPgInfo"><span id="wbPgNum">1</span><span id="wbPgOf">/1</span></div>
+        <button class="wbPgSBtn" id="wbPgNext" title="পরের পেজ">↓</button>
+        <div class="wbPgHSep"></div>
+        <button class="wbPgSBtn" id="wbPgThumb" title="সব পেজ দেখো">⊞</button>
+        <button class="wbPgSBtn wbPgDelBtn" id="wbPgDel" title="পেজ মুছো">✕</button>
+        <div class="wbPgHSep"></div>
+        <button class="wbPgSBtn" id="wbPgExport" title="Export">⬇️</button>
+        <div class="wbPgHSep"></div>
+        <button class="wbPgSBtn" id="wbPgSideMin" title="সাইডবার লুকাও">‹</button>
+      </div>
+    </div>
+    <div id="wbPgSideTab" title="সাইডবার খোলো">›</div>
+    <div id="wbBody">
+      <canvas id="wbCanvas"></canvas>
+      <div class="AN_dragGhost" id="AN_dragGhost"></div>
+    </div>
+  </div>
+  <div id="wbBar">
+    <div class="wbScroll" id="wbScroll"></div>
+    <div id="wbBarTitle"><span>🖊️</span> Self Study Whiteboard</div>
+  </div>
+</div>
+<!-- Text popup -->
+<div id="AN_wbTextpop">
+  <div style="font-size:12px;font-weight:700;color:#0d6efd;margin-bottom:6px">✍️ Type here...</div>
+  <input id="AN_wbTinput" type="text" placeholder="Type here..." autocomplete="off">
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button id="AN_wbTok">✅ Add</button>
+    <button id="AN_wbTcancel">❌ Cancel</button>
+  </div>
+</div>
+<script src="whiteboard.js"></script>
+</body>
+</html>
