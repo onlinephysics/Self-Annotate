@@ -2,7 +2,7 @@
    ANNOTATION TOOL + WHITEBOARD  — Chrome/Firefox Extension
    Content Script: inject করলে যেকোনো পেজে কাজ করে (http, https, file://)।
    Settings এখন popup-এ — পেজে আর কোনো Settings button নেই।
-   v1.4.4 — Multi-level undo/redo, color picker, bug fixes, final build
+   v1.4.5 — Infinite canvas, touch zoom/pan, coordinate fix, major bug fixes
 ══════════════════════════════════════════════════════════ */
 (function () {
   'use strict';

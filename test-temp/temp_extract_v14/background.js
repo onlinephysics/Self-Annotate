@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════
-   Self Annotate — Background Service Worker v1.4.4 (MV3)
+   Self Annotate — Background Service Worker v1.4.5 (MV3)
    - Popup-based ON/OFF toggle (popup.html)
    - Supports http://, https://, AND file:// pages
    - Badge shows ON (green) / OFF (no badge)

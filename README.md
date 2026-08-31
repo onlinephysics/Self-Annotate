@@ -71,7 +71,7 @@
 ## Installation
 
 ### Chrome
-1. Download `self-annotate-v1.4.4-chrome.zip` from the `chrome-packages/` folder
+1. Download `self-annotate-v1.4.5-chrome.zip` from the `chrome-packages/` folder
 2. Extract to a permanent folder (e.g. `C:\Extensions\self-annotate\`)
 3. Open `chrome://extensions`
 4. Enable **Developer mode** (top-right toggle)
@@ -79,7 +79,7 @@
 6. Pin the extension and click the icon to turn it ON
 
 ### Firefox
-1. Download `self-annotate-v1.4.4-firefox.zip`
+1. Download `self-annotate-v1.4.5-firefox.zip`
 2. Open `about:debugging#/runtime/this-firefox`
 3. Click **Load Temporary Add-on** → select the zip
 4. For permanent install, submit to [addons.mozilla.org](https://addons.mozilla.org)
@@ -104,12 +104,13 @@ For `file://` pages, enable **Allow access to file URLs**:
 
 | Package | Version | Path |
 |---------|---------|------|
-| Chrome | v1.4.4 | `chrome-packages/self-annotate-v1.4.4-chrome.zip` |
-| Firefox | v1.4.4 | `firefox-packages/self-annotate-v1.4.4-firefox.zip` |
+| Chrome | v1.4.5 | `chrome-packages/self-annotate-v1.4.5-chrome.zip` |
+| Firefox | v1.4.5 | `firefox-packages/self-annotate-v1.4.5-firefox.zip` |
 
 ### Build History
 | Version | Highlights |
 |---------|------------|
+| v1.4.5 | **Major Bug Fix**: True infinite canvas, drawing coordinate alignment across zoom/pan, smooth touch pinch-zoom & pan, Chrome MV3 compatibility |
 | v1.4.4 | Multi-level undo/redo, custom color picker, bug fixes (double Ctrl+Z, missing translations) |
 | v1.4.3 | Undo/Redo stack, custom color picker, redo buttons |
 | v1.4.2 | Partial eraser (split strokes), eraser preview circle |
