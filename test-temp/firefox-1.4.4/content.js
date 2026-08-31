@@ -819,13 +819,12 @@ body.AN_dark .AN_wbZoomSlider { background:rgba(255,255,255,.15); }
     }
     function getCoord(e) {
       var s = e.touches ? e.touches[0] : e;
-      var z = viewport.scale;
-      if (mode === 'overlay') return { x: (s.clientX + window.scrollX - viewport.x) / z, y: (s.clientY + window.scrollY - viewport.y) / z };
+      if (mode === 'overlay') return { x: s.clientX + window.scrollX, y: s.clientY + window.scrollY };
       var r = canvas.getBoundingClientRect();
-      return { x: (s.clientX - r.left - viewport.x) / z, y: (s.clientY - r.top  - viewport.y) / z };
+      var z = viewport.scale || 1;
+      return { x: (s.clientX - r.left - viewport.x) / z, y: (s.clientY - r.top - viewport.y) / z };
     }
     function toCanvas(x, y) {
-      if (mode === 'overlay') return { x: x - window.scrollX, y: y - window.scrollY };
       return { x: x, y: y };
     }
     function smoothPath(pts) {
@@ -936,36 +935,111 @@ body.AN_dark .AN_wbZoomSlider { background:rgba(255,255,255,.15); }
       }
       ctx.restore();
     }
+    function updSelBtns() {
+      if (!selActions) {
+        selActions = document.createElement('div');
+        selActions.className = 'AN_selActions';
+        var delBtn = document.createElement('button');
+        delBtn.className = 'AN_selDel';
+        delBtn.title = 'Delete';
+        delBtn.textContent = '🗑️';
+        delBtn.addEventListener('click', function(e){
+          e.stopPropagation();
+          if (selectedStrokes.length > 0) {
+            saveState();
+            strokes = strokes.filter(function(s){ return selectedStrokes.indexOf(s) < 0; });
+            selectedStrokes = [];
+            redraw();
+          }
+        });
+        selActions.appendChild(delBtn);
+        var parent = (mode === 'overlay') ? document.body : canvas.parentElement;
+        if (parent) parent.appendChild(selActions);
+      }
+      if (selectedStrokes.length > 0) {
+        var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        selectedStrokes.forEach(function(s){
+          var bx = getStrokeBBox(s);
+          if (bx) {
+            minX = Math.min(minX, bx.x);
+            minY = Math.min(minY, bx.y);
+            maxX = Math.max(maxX, bx.x + bx.w);
+            maxY = Math.max(maxY, bx.y + bx.h);
+          }
+        });
+        if (minX !== Infinity) {
+          if (mode === 'overlay') {
+            selActions.style.position = 'fixed';
+            selActions.style.left = (minX - window.scrollX) + 'px';
+            selActions.style.top = Math.max(10, minY - window.scrollY - 34) + 'px';
+          } else {
+            selActions.style.position = 'absolute';
+            var r = canvas.getBoundingClientRect();
+            var pr = canvas.parentElement.getBoundingClientRect();
+            var sx = (r.left - pr.left) + minX * viewport.scale + viewport.x;
+            var sy = (r.top - pr.top) + minY * viewport.scale + viewport.y;
+            selActions.style.left = sx + 'px';
+            selActions.style.top = Math.max(10, sy - 34) + 'px';
+          }
+          selActions.classList.add('AN_show');
+        } else {
+          selActions.classList.remove('AN_show');
+        }
+      } else if (selActions) {
+        selActions.classList.remove('AN_show');
+      }
+    }
     function redraw() {
       var dpr=window.devicePixelRatio||1, w=canvas.width/dpr, h=canvas.height/dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0,0,w,h);
       if (getBg) { ctx.fillStyle=getBg(); ctx.fillRect(0,0,w,h); }
+      ctx.save();
+      if (mode === 'overlay') {
+        ctx.translate(-window.scrollX, -window.scrollY);
+      } else {
+        ctx.translate(viewport.x, viewport.y);
+        ctx.scale(viewport.scale, viewport.scale);
+      }
       for (var i=0;i<strokes.length;i++) drawOne(strokes[i], strokes[i]._alpha!==undefined?strokes[i]._alpha:undefined);
       if (cur) drawOne(cur);
+      var invScale = (mode === 'overlay' ? 1 : (viewport.scale || 1));
+      selectedStrokes.forEach(function(s){
+        var bx=getStrokeBBox(s);
+        if(bx){
+          ctx.strokeStyle='#3b82f6';
+          ctx.lineWidth=2/invScale;
+          ctx.setLineDash([4/invScale,4/invScale]);
+          ctx.strokeRect(bx.x-4,bx.y-4,bx.w+8,bx.h+8);
+          ctx.setLineDash([]);
+        }
+      });
+      if (selectRect) {
+        var rx=Math.min(selectRect.x1,selectRect.x2), ry=Math.min(selectRect.y1,selectRect.y2), rw=Math.abs(selectRect.x2-selectRect.x1), rh=Math.abs(selectRect.y2-selectRect.y1);
+        ctx.fillStyle='rgba(59,130,246,0.08)'; ctx.strokeStyle='rgba(59,130,246,0.6)';
+        ctx.lineWidth=1.5/invScale; ctx.setLineDash([5/invScale,5/invScale]);
+        ctx.fillRect(rx,ry,rw,rh); ctx.strokeRect(rx,ry,rw,rh); ctx.setLineDash([]);
+      }
+      ctx.restore();
+
       // Eraser preview circle
       if (_tool==='eraser' && _eraserPos) {
+        var epX = (mode === 'overlay') ? (_eraserPos.x - window.scrollX) : (_eraserPos.x * viewport.scale + viewport.x);
+        var epY = (mode === 'overlay') ? (_eraserPos.y - window.scrollY) : (_eraserPos.y * viewport.scale + viewport.y);
+        var epR = _eraserRad * (mode === 'overlay' ? 1 : (viewport.scale || 1));
         ctx.save();
         ctx.beginPath();
-        ctx.arc(_eraserPos.x,_eraserPos.y,_eraserRad,0,Math.PI*2);
+        ctx.arc(epX,epY,epR,0,Math.PI*2);
         ctx.strokeStyle='rgba(0,0,0,0.25)';
         ctx.lineWidth=2;
         ctx.setLineDash([4,4]);
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(_eraserPos.x,_eraserPos.y,_eraserRad,0,Math.PI*2);
+        ctx.arc(epX,epY,epR,0,Math.PI*2);
         ctx.fillStyle='rgba(255,255,255,0.15)';
         ctx.fill();
         ctx.restore();
       }
-      ctx.save();
-      selectedStrokes.forEach(function(s){var bx=getStrokeBBox(s);if(bx){var p1=toCanvas(bx.x,bx.y);ctx.strokeStyle='#3b82f6';ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.strokeRect(p1.x-4,p1.y-4,bx.w+8,bx.h+8);ctx.setLineDash([]);}});
-      if (selectRect) {
-        var rx,ry,rw,rh;
-        if (mode==='overlay') { rx=Math.min(selectRect.x1,selectRect.x2); ry=Math.min(selectRect.y1,selectRect.y2); rw=Math.abs(selectRect.x2-selectRect.x1); rh=Math.abs(selectRect.y2-selectRect.y1); }
-        else { rx=Math.min(selectRect.x1,selectRect.x2); ry=Math.min(selectRect.y1,selectRect.y2); rw=Math.abs(selectRect.x2-selectRect.x1); rh=Math.abs(selectRect.y2-selectRect.y1); }
-        ctx.fillStyle='rgba(59,130,246,0.08)'; ctx.strokeStyle='rgba(59,130,246,0.6)'; ctx.lineWidth=1.5; ctx.setLineDash([5,5]); ctx.fillRect(rx,ry,rw,rh); ctx.strokeRect(rx,ry,rw,rh); ctx.setLineDash([]);
-      }
-      ctx.restore();
       updSelBtns();
     }
     function scheduleFade(s) {
@@ -1019,7 +1093,7 @@ body.AN_dark .AN_wbZoomSlider { background:rgba(255,255,255,.15); }
     function onDown(tool,color,lw,e) {
       _tool=tool;
       var p=getCoord(e);
-      if (tool==='eraser'){_eraserRad=lw*4+12;_eraserPos=p;drawing=true;eraseAt(p.x,p.y,lw);return;}
+      if (tool==='eraser'){_eraserRad=lw*4+12;_eraserPos=p;drawing=true;saveState();eraseAt(p.x,p.y,lw);return;}
       if (tool==='pan') {
         drawing=true; isPanning=true; panStart={x:e.clientX,y:e.clientY};
         canvas.style.cursor='grabbing'; return;
@@ -1103,20 +1177,21 @@ body.AN_dark .AN_wbZoomSlider { background:rgba(255,255,255,.15); }
     });
     // Viewport API
     function getViewport(){return {x:viewport.x,y:viewport.y,scale:viewport.scale};}
-    function setViewport(v){if(!v)return;viewport.x=v.x!==undefined?v.x:viewport.x;viewport.y=v.y!==undefined?v.y:viewport.y;viewport.scale=v.scale!==undefined?v.scale:viewport.scale;applyViewport();redraw();}
+    function setViewport(v){if(!v)return;viewport.x=v.x!==undefined?v.x:viewport.x;viewport.y=v.y!==undefined?v.y:viewport.y;viewport.scale=v.scale!==undefined?v.scale:viewport.scale;redraw();}
     function zoomAtPoint(clientX,clientY,newScale){
+      newScale=Math.max(0.2,Math.min(10,newScale));
       var r=canvas.getBoundingClientRect();
-      var cx=clientX-r.left, cy=clientY-r.top;
-      var logicalX=(cx-viewport.x)/viewport.scale;
-      var logicalY=(cy-viewport.y)/viewport.scale;
-      viewport.x=cx-logicalX*newScale;
-      viewport.y=cy-logicalY*newScale;
-      viewport.scale=Math.max(0.25,Math.min(5,newScale));
-      applyViewport();redraw();
+      var sx=clientX-r.left, sy=clientY-r.top;
+      var worldX=(sx-viewport.x)/viewport.scale;
+      var worldY=(sy-viewport.y)/viewport.scale;
+      viewport.x=sx-worldX*newScale;
+      viewport.y=sy-worldY*newScale;
+      viewport.scale=newScale;
+      redraw();
     }
-    function panBy(dx,dy){viewport.x+=dx;viewport.y+=dy;applyViewport();redraw();}
-    function applyViewport(){canvas.style.transform='translate('+viewport.x+'px,'+viewport.y+'px) scale('+viewport.scale+')';}
-    return {resize,redraw,onDown,onMove,onUp,pushText,addImage,undo,redo,clearAll,getStrokes,setStrokes,clearSel,getSel,setSel,getViewport,setViewport,zoomAtPoint,panBy};
+    function panBy(dx,dy){viewport.x+=dx;viewport.y+=dy;redraw();}
+    function applyViewport(){}
+    return {resize,redraw,onDown,onMove,onUp,pushText,addImage,undo,redo,clear:clearAll,clearAll,getStrokes,setStrokes,clearSel,getSel,setSel,getViewport,setViewport,zoomAtPoint,panBy,getCoord};
   }
 
   // ════════════════════════════════════════════
@@ -2050,48 +2125,95 @@ body.AN_dark .AN_wbZoomSlider { background:rgba(255,255,255,.15); }
     WB.resize();
   }
 
-  var wbPinchDist=0, wbPinchCenter={x:0,y:0}, wbPinchStartScale=1;
+  var wbTouchPinch={active:false,startDist:0,startScale:1,startCenter:{x:0,y:0},startViewport:{x:0,y:0}};
   wbCanvas.addEventListener('mousedown',function(e){e.preventDefault();if(wbState.tool==='text'){openWBText(e);return;}WB.onDown(wbState.tool,wbState.color,wbState.lw,e);},{passive:false});
   wbCanvas.addEventListener('mousemove',function(e){e.preventDefault();WB.onMove(wbState.tool,wbState.lw,e);},{passive:false});
   wbCanvas.addEventListener('mouseup',function(){WB.onUp(wbState.tool);});
   wbCanvas.addEventListener('mouseleave',function(){WB.onUp(wbState.tool);});
+
   wbCanvas.addEventListener('touchstart',function(e){
     e.preventDefault();
-    if(e.touches.length===2){
+    if(e.touches.length>=2){
+      wbTouchPinch.active=true;
       var t1=e.touches[0], t2=e.touches[1];
-      wbPinchCenter={x:(t1.clientX+t2.clientX)/2, y:(t1.clientY+t2.clientY)/2};
-      var dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY;
-      wbPinchDist=Math.sqrt(dx*dx+dy*dy);
-      wbPinchStartScale=WB.getViewport().scale;
+      wbTouchPinch.startCenter={x:(t1.clientX+t2.clientX)/2, y:(t1.clientY+t2.clientY)/2};
+      wbTouchPinch.startDist=Math.hypot(t1.clientX-t2.clientX, t1.clientY-t2.clientY);
+      var vp=WB.getViewport();
+      wbTouchPinch.startScale=vp.scale||1;
+      wbTouchPinch.startViewport={x:vp.x, y:vp.y};
+      WB.onUp(wbState.tool);
       return;
     }
+    if(wbTouchPinch.active)return;
     if(wbState.tool==='text'){openWBText(e);return;}
     WB.onDown(wbState.tool,wbState.color,wbState.lw,e);
   },{passive:false});
+
   wbCanvas.addEventListener('touchmove',function(e){
     e.preventDefault();
-    if(e.touches.length===2){
+    if(e.touches.length>=2&&wbTouchPinch.active){
       var t1=e.touches[0], t2=e.touches[1];
-      var dx=t1.clientX-t2.clientX, dy=t1.clientY-t2.clientY;
-      var dist=Math.sqrt(dx*dx+dy*dy);
-      if(wbPinchDist>0){
-        var newScale=Math.max(0.25,Math.min(5,wbPinchStartScale*(dist/wbPinchDist)));
-        WB.zoomAtPoint(wbPinchCenter.x,wbPinchCenter.y,newScale);
+      var curDist=Math.hypot(t1.clientX-t2.clientX, t1.clientY-t2.clientY);
+      var curCenter={x:(t1.clientX+t2.clientX)/2, y:(t1.clientY+t2.clientY)/2};
+      if(wbTouchPinch.startDist>0){
+        var scaleRatio=curDist/wbTouchPinch.startDist;
+        var targetScale=Math.max(0.2,Math.min(10,wbTouchPinch.startScale*scaleRatio));
+        var r=wbCanvas.getBoundingClientRect();
+        var startLocalX=wbTouchPinch.startCenter.x-r.left;
+        var startLocalY=wbTouchPinch.startCenter.y-r.top;
+        var worldX=(startLocalX-wbTouchPinch.startViewport.x)/wbTouchPinch.startScale;
+        var worldY=(startLocalY-wbTouchPinch.startViewport.y)/wbTouchPinch.startScale;
+        var panDeltaX=curCenter.x-wbTouchPinch.startCenter.x;
+        var panDeltaY=curCenter.y-wbTouchPinch.startCenter.y;
+        var curLocalX=startLocalX+panDeltaX;
+        var curLocalY=startLocalY+panDeltaY;
+        var newVx=curLocalX-worldX*targetScale;
+        var newVy=curLocalY-worldY*targetScale;
+        WB.setViewport({x:newVx,y:newVy,scale:targetScale});
         updateZoomDisplay();
       }
-      wbPinchDist=dist;
       return;
     }
+    if(wbTouchPinch.active)return;
     WB.onMove(wbState.tool,wbState.lw,e);
   },{passive:false});
+
   wbCanvas.addEventListener('touchend',function(e){
-    if(e.touches.length<2) wbPinchDist=0;
+    if(e.touches.length===0){
+      if(wbTouchPinch.active){
+        wbTouchPinch.active=false;
+        wbTouchPinch.startDist=0;
+        return;
+      }
+      WB.onUp(wbState.tool);
+    }else if(e.touches.length===1&&wbTouchPinch.active){
+      wbTouchPinch.active=false;
+      wbTouchPinch.startDist=0;
+    }
+  });
+
+  wbCanvas.addEventListener('touchcancel',function(e){
+    wbTouchPinch.active=false;
+    wbTouchPinch.startDist=0;
     WB.onUp(wbState.tool);
   });
 
+  wbCanvas.addEventListener('wheel',function(e){
+    e.preventDefault();
+    if(e.ctrlKey||e.metaKey){
+      var factor=Math.exp(-e.deltaY*0.01);
+      var curScale=WB.getViewport().scale||1;
+      WB.zoomAtPoint(e.clientX,e.clientY,curScale*factor);
+      updateZoomDisplay();
+    }else{
+      WB.panBy(-e.deltaX,-e.deltaY);
+    }
+  },{passive:false});
+
   function openWBText(e){
-    var s=e.touches?e.touches[0]:e,r=wbCanvas.getBoundingClientRect();
-    wbState.textPos={x:s.clientX-r.left,y:s.clientY-r.top};
+    var p=WB.getCoord(e);
+    wbState.textPos={x:p.x,y:p.y};
+    var s=e.touches?e.touches[0]:e;
     var pop=document.getElementById('AN_wbTextpop');
     pop.style.left=Math.min(s.clientX-wbBody.getBoundingClientRect().left+10,wbBody.clientWidth-225)+'px';
     pop.style.top=Math.min(s.clientY-wbBody.getBoundingClientRect().top-10,wbBody.clientHeight-130)+'px';

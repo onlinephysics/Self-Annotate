@@ -15,10 +15,7 @@
     "default_title": "Self Annotate",
     "default_popup": "popup.html"
   },
-  "options_ui": {
-    "page": "options.html",
-    "open_in_tab": true
-  },
+  "options_page": "options.html",
   "permissions": [
     "activeTab",
     "scripting",
@@ -30,14 +27,9 @@
     "file://*/*"
   ],
   "background": {
-    "scripts": ["background.js"]
+    "service_worker": "background.js"
   },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "self-annotate@selfstudy.xyz",
-      "strict_min_version": "109.0"
-    }
-  },
+  "content_scripts": [],
   "web_accessible_resources": [{
     "resources": ["whiteboard.html"],
     "matches": ["<all_urls>"]
